@@ -1,143 +1,123 @@
-# Regional Sales Analytics — Superstore Dataset
-
-Sales analysis on a US retail superstore dataset looking at why revenue varies so much across the four regions. The West brings in $710k and the South brings in $389k, which is a 45% gap, and the goal was to trace where that comes from rather than just observe that it exists.
-
-Turns out the answer is both pricing inconsistencies and lower volume in the South, and they don't point in the same direction.
-
+# Customer Revenue & Retention Analysis — Olist E-Commerce
+ 
+Cohort analysis on the Olist Brazilian e-commerce dataset. The dataset covers 96,469 delivered orders from 93,349 unique customers between 2016 and 2018. The focus is on customer retention, when repeat buyers come back, and how revenue splits between first-time and returning customers.
+ 
+**The short version:** 97% of customers never placed a second order. Growth here depends almost entirely on acquiring new customers, not keeping existing ones.
+ 
 ---
-
+ 
 ## The Question
-
-West region: $710,220. South region: $389,151. That's a $321,068 difference. What's driving it?
-
+ 
+How many customers come back after their first purchase? When do they return? And what share of total revenue actually comes from repeat buyers?
+ 
 ---
-
+ 
 ## Findings
-
-**The gap shows up across all three product categories**
-
-Breaking revenue down by Furniture, Office Supplies, and Technology separately, the same ranking appears in all three: West and East lead, Central is in the middle, South is last. It's not a single-category issue.
-
-**Machines have a large pricing spread across regions**
-
-The Machines sub-category averages $2,994 per sale in the South versus $1,088 in the West. That's a 107% spread for the same product type across regions. Copiers show a 64% spread and Tables show a 59% spread.
-
-**South transaction volume is below the 25% baseline in every sub-category**
-
-With four regions, equal distribution would give each region roughly 25% of transactions. South is under that in every one of the top 10 sub-categories by revenue. Copiers are the most extreme at 10.6%.
-
-**The Machines pricing effect is actually positive for the South**
-
-South charges more per machine than any other region and sells fewer of them. The gap attribution analysis shows this adds $34,301 to South revenue relative to West pricing. The volume deficit is the bigger problem, not pricing in the direction you'd expect.
-
+ 
+**Retention rates are low no matter how you measure them**
+ 
+1.25% of customers placed a second order within 30 days of their first. Extend that to 60 days and it climbs to 1.57%, and to 90 days it reaches 1.79%. Put another way: roughly 98 out of every 100 customers who bought something never came back within three months.
+ 
+**The customers who do return tend to do so fast**
+ 
+Of everyone who placed a second order, 1,170 did it within the first 30 days. After that the numbers fall off sharply — 300 returned in the 31–60 day window, 197 in the 61–90 day window. There's a rebound at 91–180 days and 180+ days, which could mean some buyers have longer natural purchase cycles or came back for a specific reason.
+ 
+**First-time buyers account for nearly all revenue**
+ 
+New customers brought in R$15.1M. Returning customers brought in R$0.3M. That's a 97.8% / 2.2% split — retention is not a meaningful revenue channel for this business at this point in time.
+ 
+**Spend per order is almost identical across both groups**
+ 
+New customers averaged R$161.58 per order; returning customers averaged R$167.43. The gap is negligible. The problem is frequency, not order size.
+ 
 ---
-
+ 
 ## Approach
-
-Data is the Sample Superstore Sales Dataset from Kaggle: 9,800 rows, 4 regions, 3 categories, 17 sub-categories, 2015 to 2018.
-
-After validating the data (11 missing postal codes, nothing that affects the analysis), the regional revenue summary came from SQL GROUP BY aggregations in DuckDB. From there, a pivot by category tested whether the gap was isolated or consistent across product lines.
-
-The pricing analysis calculated average sale value per sub-category per region and used a spread metric to rank which sub-categories had the most inconsistency across regions.
-
-The gap attribution used a counterfactual: what would South revenue have been for each sub-category if it had sold at West's average prices? The difference isolates the pricing component from the volume component.
-
-Tools: Python (Pandas, DuckDB, Matplotlib). Power BI dashboard coming soon with the star schema and DAX measures built on the clean output tables.
-
+ 
+The data comes from the [Brazilian E-Commerce Public Dataset by Olist](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce) on Kaggle — 9 CSV files covering orders, customers, payments, products, sellers, and geolocation from 2016 to 2018.
+ 
+The analysis filters to delivered orders only, then joins payment data to get order-level revenue. Each order gets classified as new or returning by checking whether it matches the customer's earliest order date. Retention rates come from looking at each customer's first purchase and checking for any follow-up order within 30, 60, or 90 days. The timing buckets break down when returning customers actually came back.
+ 
+**Tools:** Python (Pandas, DuckDB, Matplotlib). Power BI dashboard in progress — star schema and DAX measures for retention rates, revenue by segment, cohort churn, and monthly trends.
+ 
 ---
-
+ 
 ## Results
-
-**Regional Revenue Summary**
-
-| Region  | Revenue    | Orders | Avg Order | Revenue / Customer |
-|---------|------------|--------|-----------|--------------------|
-| West    | $710,220   | 1,587  | $226      | $1,043             |
-| East    | $669,519   | 1,369  | $240      | $1,001             |
-| Central | $492,647   | 1,156  | $216      | $787               |
-| South   | $389,151   | 810    | $244      | $765               |
-
-West to South revenue gap: **$321,068 (45.2%)**
-
-**Top Pricing Inconsistencies by Sub-Category**
-
-| Sub-Category | West Avg | East Avg | Central Avg | South Avg | Spread |
-|--------------|----------|----------|-------------|-----------|--------|
-| Machines     | $1,088   | $1,787   | $1,276      | $2,994    | 107%   |
-| Copiers      | $2,020   | $2,661   | $2,329      | $1,329    | 64%    |
-| Tables       | $717     | $491     | $544        | $877      | 59%    |
-
-**South Volume Share vs 25% Equal-Share Baseline**
-
-| Sub-Category | South Share | At or Above 25%? |
-|--------------|-------------|------------------|
-| Copiers      | 10.6%       | No               |
-| Bookcases    | 12.4%       | No               |
-| Chairs       | 14.2%       | No               |
-| Storage      | 15.3%       | No               |
-| Machines     | 15.7%       | No               |
-| Phones       | 15.9%       | No               |
-| Tables       | 15.9%       | No               |
-| Binders      | 16.2%       | No               |
-| Paper        | 16.3%       | No               |
-| Accessories  | 16.5%       | No               |
-
-South is below the 25% baseline in all 10 top sub-categories by revenue.
-
+ 
+**Retention Rates**
+ 
+| Window | Customers Who Returned | Retention Rate |
+|---|---|---|
+| 30 days | 1,170 | 1.25% |
+| 60 days | 1,470 | 1.57% |
+| 90 days | 1,667 | 1.79% |
+| Never returned | 90,784 | 97.2% |
+ 
+Total unique customers: **93,349**
+ 
+**Revenue by Customer Segment**
+ 
+| Segment | Customers | Orders | Total Revenue | Avg Order | Revenue / Customer |
+|---|---|---|---|---|---|
+| New Customer | 93,349 | 94,209 | R$15,083,719 | R$160.11 | R$161.58 |
+| Returning Customer | 2,015 | 2,260 | R$337,364 | R$149.28 | R$167.43 |
+ 
+**Return Timing (among customers who came back)**
+ 
+| Window | Count |
+|---|---|
+| 0–30 days | 1,170 |
+| 31–60 days | 300 |
+| 61–90 days | 197 |
+| 91–180 days | 415 |
+| 180+ days | 483 |
+ 
 ---
-
+ 
 ## Charts
-
-<img width="2384" height="1769" alt="retention_analysis" src="https://github.com/user-attachments/assets/d7152e5a-58e4-4096-b779-609d9e090e58" />
-
-
+ 
+![retention_analysis](retention_analysis.png)
+ 
 Power BI dashboard coming soon.
-
+ 
 ---
-
-## Future Directions
-
-A few things worth exploring with more time or better data:
-
-- **Profit margin by region** — this dataset only has revenue, not cost. The South's higher average sale value on Machines could mean higher margins or it could mean different product mix within the sub-category. Would need cost data to separate those.
-
-- **Customer-level analysis** — the gap in revenue per customer ($1,043 West vs $765 South) is significant but this analysis treats it as an output, not an input. Worth digging into whether South customers buy less frequently, buy smaller items, or churn faster.
-
-- **Time series** — the dataset covers 2015 to 2018. Is the gap growing, shrinking, or stable over time? A year-over-year breakdown by region would show whether this is a structural long-term issue or something that shifted recently.
-
-- **Zip code or state-level analysis** — the South region is large and geographically diverse. Aggregating the whole region might be masking a smaller number of high-performing states and a long tail of underperforming ones.
-
-- **Statistical significance** — the pricing spread analysis is descriptive. A proper test (e.g. ANOVA across regions for each sub-category) would confirm whether the differences are statistically meaningful or just noise from small sample sizes, especially for low-volume sub-categories like Copiers (66 total transactions).
-
----
-
+ 
 ## Repo Structure
-
+ 
 ```
-regional-sales-analytics/
+olist-retention-analysis/
 │
-├── superstore_regional_analysis.py    # full analysis script, paste into Colab and run
-├── regional_sales_analysis.png        # four-panel chart output
+├── olist_retention_analysis.py    # full analysis script, paste into Colab and run
+├── retention_analysis.png         # four-panel chart output
 ├── README.md
 │
 └── outputs/
-    ├── fact_sales.csv                 # 9,800 row fact table
-    ├── dim_region_summary.csv         # revenue aggregated by region
-    ├── dim_category_region.csv        # category x region breakdown
-    ├── dim_pricing_analysis.csv       # avg sale value and spread by sub-category
-    ├── dim_monthly_revenue.csv        # monthly revenue by region
-    ├── dim_volume_distribution.csv    # transaction share by sub-category
-    └── gap_attribution.csv           # pricing effect vs volume effect by sub-category
+    ├── fact_orders.csv            # 96,469 row fact table
+    ├── dim_customer.csv           # one row per unique customer with lifetime stats
+    ├── dim_monthly_revenue.csv    # monthly revenue aggregated
+    ├── dim_state_revenue.csv      # revenue by Brazilian state
+    ├── cohort_analysis.csv        # order-level cohort classification
+    ├── churn_buckets.csv          # return timing distribution
+    ├── retention_rates.csv        # 30/60/90 day retention numbers
+    └── segment_revenue.csv        # new vs returning revenue summary
 ```
-
+ 
 ---
-
+ 
 ## How to Run
-
-Download the dataset from Kaggle (search "Sample Superstore"), open Google Colab, upload `train.csv`, paste the script and run. The last cell downloads all output CSVs automatically.
-<img width="2384" height="1769" alt="retention_analysis" src="https://github.com/user-attachments/assets/80385a29-7c08-4ace-9ebb-0ff259a0cba4" />
-
+ 
+Download the dataset from Kaggle (search "Brazilian E-Commerce Public Dataset by Olist"), open Google Colab, and upload all 9 CSV files. Paste the script and run — the last cell downloads all output files automatically.
+ 
+```python
+!pip install duckdb  # only needed in Colab
 ```
-
+ 
 ---
-
+ 
+## Future Directions
+ 
+- **Category-level retention** — some product categories probably have much higher return rates than others. Consumables vs one-time purchases like furniture would likely look completely different.
+- **Geographic patterns** — do customers in certain Brazilian states come back more often? Delivery speed, income distribution, and local competition could all play a role.
+- **Modeling repeat buyers** — order characteristics like category, price, delivery time, and review score might predict whether a customer returns. Worth testing a simple classifier.
+- **Delivery time and repeat purchase rate** — the dataset has both estimated and actual delivery dates. A direct test of whether faster delivery correlates with higher return rates is possible with this data.
+- **Cohort revenue over time** — tracking how much each monthly acquisition cohort generates in its first 6 and 12 months would give a clearer picture of which cohorts retained best.
