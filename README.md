@@ -81,7 +81,18 @@ Total unique customers: **93,349**
 Power BI dashboard coming soon.
  
 ---
- 
+## SQL Files
+
+This repo includes standalone SQL files extracted from the DuckDB workflow used in the Python analysis script.
+
+The SQL covers:
+- Delivered-order filtering
+- Revenue aggregation
+- Customer cohort classification
+- 30/60/90-day retention rate calculations
+- Revenue comparison between new and returning customers
+
+DuckDB was used to run the SQL queries and generate output tables for analysis and dashboarding. 
 ## Repo Structure
  
 ```
